@@ -1,0 +1,59 @@
+// *********************************************************************
+apply plugin: 'maven'
+
+// 读取配置信息
+ext {
+    // 读取配置信息
+    Properties properties = new Properties()
+    properties.load(file('./maven.properties').newDataInputStream())
+
+    artifact_Id = properties.getProperty('POM_ARTIFACT_ID')
+    version_name = properties.getProperty('POM_VERSIONNAME')
+    desc = properties.getProperty("POM_DESC")
+    group_id = properties.getProperty("POM_GROUP_ID")
+}
+
+// 判断版本是Release or Snapshots
+def isReleaseBuild() {
+    return !("${version_name}".contains("SNAPSHOT"))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from 'build/docs/javadoc'
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            pom.groupId = "${group_id}"
+            pom.version = "${version_name}"
+            pom.artifactId = "${artifact_Id}"
+            pom.project {
+                name project.name
+                packaging "jar"
+                description "${desc}"
+            }
+
+            def repository_url = SNAPSHOT_REPOSITORY_URL;
+            if (isReleaseBuild()) {
+                repository_url = RELEASE_REPOSITORY_URL;
+            }
+
+            repository(url: repository_url) {
+                authentication(userName: USERNAME, password: PASSWORD)
+            }
+        }
+    }
+}

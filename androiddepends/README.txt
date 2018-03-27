@@ -1,0 +1,1 @@
+常规的maven publish打包处理

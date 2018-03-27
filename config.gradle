@@ -1,0 +1,20 @@
+ext {
+
+    supportVersion = '25.0.0'
+
+    compileSdkVersion = 23
+    buildToolsVersion = '25.0.2'
+    targetSdkVersion = 22
+
+    // for maven upload
+    USERNAME = 'admin'
+    PASSWORD = 'admin123'
+    RELEASE_REPOSITORY_URL='http://localhost:8081/nexus/content/repositories/releases/'
+    SNAPSHOT_REPOSITORY_URL='../repo'
+
+
+    dependencies = [
+            appcompatv7 : "com.android.support:appcompat-v7:${supportVersion}",
+            recyclerviewv7 : "com.android.support:recyclerview-v7:${supportVersion}"
+    ]
+}

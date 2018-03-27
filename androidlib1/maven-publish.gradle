@@ -1,0 +1,87 @@
+// *********************************************************************
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+signing {
+    required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+// 读取配置信息
+ext {
+    // 读取配置信息
+    Properties properties = new Properties()
+    properties.load(file('./maven.properties').newDataInputStream())
+
+    artifact_Id = properties.getProperty('POM_ARTIFACT_ID')
+    version_name = properties.getProperty('POM_VERSIONNAME')
+    desc = properties.getProperty("POM_DESC")
+    group_id = properties.getProperty("POM_GROUP_ID")
+}
+
+// 判断版本是Release or Snapshots
+def isReleaseBuild() {
+    return !("${version_name}".contains("SNAPSHOT"))
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+publishing {
+    publications {
+        Core(MavenPublication) {
+            groupId group_id
+            artifactId artifact_Id
+            version version_name
+            artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
+            artifact(sourcesJar)
+        }
+    }
+}
+
+publishing {
+    publications {
+        Core(MavenPublication) {
+            pom.withXml {
+                asNode().appendNode('description', "${desc}")
+
+                // 处理依赖关系
+                def dependencies = asNode().appendNode('dependencies')
+                def dependency1 = dependencies.appendNode('dependency')
+                dependency1.appendNode('groupId', 'lx.com.androiddepends')
+                dependency1.appendNode('artifactId', 'pubmaven')
+                dependency1.appendNode('version', '1.1.2')
+
+                def dependency2 = dependencies.appendNode('dependency')
+                dependency2.appendNode('groupId', 'lx.com.javadependens')
+                dependency2.appendNode('artifactId', 'pubmaven')
+                dependency2.appendNode('version', '1.1.2')
+            }
+        }
+    }
+}
+
+publishing {
+    repositories {
+        //指定项目部署到的中央库地址，UserName和Password就是Part 1中注册的账号。
+        if (!isReleaseBuild()) {
+            maven {
+                url SNAPSHOT_REPOSITORY_URL
+            }
+        } else {
+            maven {
+                url RELEASE_REPOSITORY_URL
+                credentials {
+                    username = USERNAME
+                    password = PASSWORD
+                }
+            }
+        }
+    }
+}
